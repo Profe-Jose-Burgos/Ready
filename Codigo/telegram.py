@@ -25,7 +25,7 @@ def handle_message(message):
         # Seleccionar una respuesta al azar
         response = random.choice(responses)
     else:
-        response = "I'm sorry, I didn't understand your message. Could you please clarify?"
+        response = "Lo siento, no entendí tu mensaje. ¿Podrías aclararlo?"
     # Enviar respuesta al usuario
     bot.send_message(chat_id=message.chat.id, text=response)
 
