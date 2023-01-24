@@ -1,4 +1,3 @@
-
 import telebot
 import random
 import numpy as np
