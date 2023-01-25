@@ -5,7 +5,7 @@ import tensorflow
 import tflearn
 import random
 import numpy as np
-import pickle
+import re
 #Se importan las librerias para el preprocesamiento de los datos
 from nltk.stem.lancaster import LancasterStemmer
 from nltk.stem.lancaster import LancasterStemmer
@@ -17,69 +17,60 @@ with open('intents.json') as file:
 
 data
 
-try: 
-    with open('data.pickle', 'rb') as f:
-        words, labels, training, output = pickle.load(f)
-except:
-
-    #Se crea una lista para las palabras
-    words = []
-    labels = []
-    docs_x = []
-    docs_y = []
+#Se crea una lista para las palabras
+words = []
+labels = []
+docs_x = []
+docs_y = []
 
 
-    for intents in data['intents']:
-        for patterns in intents['patterns']:
+for intents in data['intents']:
+    for patterns in intents['patterns']:
 
-            wrds = nltk.word_tokenize(patterns)
-            words.extend(wrds)
-            docs_x.append(wrds)
-            docs_y.append(intents["tag"])
+        wrds = nltk.word_tokenize(patterns)
+        words.extend(wrds)
+        docs_x.append(wrds)
+        docs_y.append(intents["tag"])
 
-            if intents['tag'] not in labels:
-                labels.append(intents['tag'])
-
-
-    words = [stemmer.stem(w.lower()) for w in words if w != "?"]
+        if intents['tag'] not in labels:
+            labels.append(intents['tag'])
 
 
-    words = sorted(list(set(words)))
-    words = [stemmer.stem(w.lower()) for w in words if w != "?"]
-    words = sorted(list(set(words)))
-    labels = sorted(labels)
-
-    training = []
-    output = []
+words = [stemmer.stem(w.lower()) for w in words if w != "?"]
 
 
-    out_empty = [0 for _ in range(len(labels))]
+words = sorted(list(set(words)))
+words = [stemmer.stem(w.lower()) for w in words if w != "?"]
+words = sorted(list(set(words)))
+labels = sorted(labels)
 
-    for x, doc in enumerate(docs_x):
-        bag = []
+training = []
+output = []
 
-        wrds = [stemmer.stem(w.lower()) for w in doc]
+out_empty = [0 for _ in range(len(labels))]
 
-        for w in words:
-            if w in wrds:
+for x, doc in enumerate(docs_x):
+    bag = []
 
-                bag.append(1)
-            else:
+    wrds = [stemmer.stem(w.lower()) for w in doc]
 
-                bag.append(0)
+    for w in words:
+        if w in wrds:
 
-            output_row = out_empty[:]
-            output_row[labels.index(docs_y[x])] = 1
+            bag.append(1)
+        else:
 
-            training.append(bag)
-            output.append(output_row)
+            bag.append(0)
 
-    #convertir lista a arreglos
-    training = np.array(training)
-    output = np.array(output)
+        output_row = out_empty[:]
+        output_row[labels.index(docs_y[x])] = 1
 
-with open ("data.pickle", "wb") as f:
-        pickle.dump((words, labels, training, output), f)
+        training.append(bag)
+        output.append(output_row)
+
+#convertir lista a arreglos
+training = np.array(training)
+output = np.array(output)
 
 tensorflow.compat.v1.reset_default_graph()
 
@@ -87,16 +78,16 @@ tensorflow.compat.v1.reset_default_graph()
 net = tflearn.input_data(shape=[None, len(training[0])])
 net = tflearn.fully_connected(net, 8)
 net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, 8)
+#net = tflearn.fully_connected(net, 8)
 net = tflearn.fully_connected(net, len(output[0]), activation="softmax")
 net = tflearn.regression(net)
 
 model = tflearn.DNN(net)
-model.fit(training, output, n_epoch=1000, batch_size=8, show_metric=True)
-model.save("model.tflearn")
+#model.fit(training, output, n_epoch=1000, batch_size=8, show_metric=True)
+#model.save("model.tflearn")
 
 def bag_of_words(s, words):
-    
+
     bag = [0 for _ in range(len(words))]
 
     s_words = nltk.word_tokenize(s)
@@ -108,3 +99,11 @@ def bag_of_words(s, words):
                 bag[i] = 1
 
     return np.array(bag)
+
+""" def regex(message):
+    split_message = re.split(r'[,:¿;-.?!¡/*#$%^-_]\s\w*',message.lower())[0]
+    results = model.predict([bag_of_words(split_message, words)])
+    results_index = np.argmax(results)
+    
+    return results_index
+ """
